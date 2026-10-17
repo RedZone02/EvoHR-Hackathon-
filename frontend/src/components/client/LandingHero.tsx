@@ -53,7 +53,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] bg-white/10 hover:bg-white/20 text-white border border-white/20 text-sm font-semibold transition-all cursor-pointer backdrop-blur-sm"
             >
               <Store className="w-4 h-4 text-[#DAF2EC]" />
-              <span>Ești magazin? Devino partener B2B</span>
+              <span>Ești comerciant? Devino partener</span>
             </button>
           </div>
 
