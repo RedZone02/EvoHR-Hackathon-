@@ -6,7 +6,7 @@ import { FilterChip } from '../../components/ui/FilterChip';
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { MapView } from './MapView';
+import { OffersMap } from '../../components/map/OffersMap';
 
 import { LandingHero } from '../../components/client/LandingHero';
 
@@ -221,12 +221,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
 
       {/* 3. Conținut: Hartă sau Grilă Carduri (Fiecare card se adaptează automat la lățimea celulei) */}
       {viewMode === 'map' ? (
-        <MapView
-          offers={filteredOffers}
-          onReserve={onReserve}
-          onToggleFavorite={onToggleFavorite}
-          favorites={favorites}
-        />
+        <OffersMap />
       ) : filteredOffers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredOffers.map((offer) => (

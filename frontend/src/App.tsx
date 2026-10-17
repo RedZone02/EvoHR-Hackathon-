@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { INITIAL_OFFERS, INITIAL_NOTIFICATIONS } from './data/mockData';
 import type { OfferProduct, AINotification, Reservation } from './types';
@@ -12,13 +12,28 @@ import { AuthModal } from './components/auth/AuthModal';
 import { AuthGate } from './components/auth/AuthGate';
 import { AIRecommendationsModal } from './components/ai/AIRecommendationsModal';
 import { Toast } from './components/ui/Toast';
+import { useNotifications } from './hooks/useNotifications';
+import { useLocationSync } from './hooks/useLocationSync';
+import { fetchRecommendations } from './lib/api';
+
+// Id stabil pe sesiune pentru vizitatori, ca să primească și ei notificări de proximitate.
+const getGuestId = (): string => {
+  const fresh = `guest-${Math.random().toString(36).slice(2, 10)}`;
+  try {
+    const saved = sessionStorage.getItem('savebite-guest-id');
+    if (saved) return saved;
+    sessionStorage.setItem('savebite-guest-id', fresh);
+  } catch {
+    // Storage blocat (mod privat): id nou la fiecare încărcare.
+  }
+  return fresh;
+};
 
 function AppContent() {
   const { role, user, openAuthModal } = useAuth();
   const [currentClientTab, setCurrentClientTab] = useState<NavigationTab>('explore');
   const [offers, setOffers] = useState<OfferProduct[]>(INITIAL_OFFERS);
   const [favorites, setFavorites] = useState<string[]>(['offer-2']);
-  const [notifications] = useState<AINotification[]>(INITIAL_NOTIFICATIONS);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   // Rezervări active ale clientului
@@ -42,6 +57,54 @@ function AppContent() {
     title: string;
     description: string;
   } | null>(null);
+
+  // Proximitate + recomandări AI (doar clienți și vizitatori; partenerii nu primesc oferte)
+  const [guestId] = useState(getGuestId);
+  const liveUserId = role === 'PARTNER' ? null : user?.id ?? guestId;
+
+  // Preferințe = categoriile ofertelor favorite
+  const preferencesKey = [...new Set(
+    offers.filter((o) => favorites.includes(o.id) && o.category !== 'all').map((o) => o.category),
+  )].sort().join(',');
+  const preferences = useMemo(() => (preferencesKey ? preferencesKey.split(',') : []), [preferencesKey]);
+
+  const position = useLocationSync(liveUserId, preferences);
+  const [apiRecommendations, setApiRecommendations] = useState<AINotification[] | null>(null);
+  const [streamedNotifications, setStreamedNotifications] = useState<AINotification[]>([]);
+
+  useEffect(() => {
+    if (!liveUserId || !position) return;
+    const controller = new AbortController();
+    fetchRecommendations({ userId: liveUserId, ...position, preferences }, controller.signal)
+      .then(setApiRecommendations)
+      .catch(() => {
+        if (!controller.signal.aborted) setApiRecommendations(null);
+      });
+    return () => controller.abort();
+  }, [liveUserId, position, preferences]);
+
+  // Notificări live din backend (SSE) → Toast-ul existent + lista din modalul AI
+  useNotifications(liveUserId, (message) => {
+    setActiveToast({
+      id: message.id,
+      type: 'success',
+      title: message.title,
+      description: message.description ?? '',
+    });
+    const incoming = message.notification;
+    if (incoming) setStreamedNotifications((prev) => [incoming, ...prev].slice(0, 20));
+  });
+
+  // Fără backend (sau înainte de prima locație) rămân notificările demo.
+  const notifications = useMemo(() => {
+    const seen = new Set<string>();
+    return [...streamedNotifications, ...(apiRecommendations ?? INITIAL_NOTIFICATIONS)].filter((n) => {
+      const key = n.offerId ?? n.id;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [streamedNotifications, apiRecommendations]);
 
   // Rezervare pachet (scade stocul, adaugă în comenzile mele și declanșează Toast)
   const handleReserve = (offerToReserve: OfferProduct) => {
