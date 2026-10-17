@@ -1,0 +1,4 @@
+/* AddProduct scoped styles */
+.add-product-container {
+  animation: fadeIn 0.2s ease-in-out;
+}

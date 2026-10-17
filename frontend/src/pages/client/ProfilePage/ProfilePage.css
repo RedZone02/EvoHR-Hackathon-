@@ -1,0 +1,4 @@
+/* ProfilePage scoped styles */
+.profile-page-container {
+  animation: fadeIn 0.2s ease-in-out;
+}

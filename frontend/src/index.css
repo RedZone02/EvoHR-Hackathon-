@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  
+  /* Paleta oficială din Design System Figma */
+  --color-brand-green: #30634E;
+  --color-brand-green-hover: #275240;
+  --color-brand-green-light: #DAF2EC;
+  --color-brand-green-dark: #1E3F32;
+  
+  --color-brand-coral: #B94330;
+  --color-brand-coral-hover: #9E3827;
+  --color-brand-coral-light: #FDE5E0;
+  
+  --color-brand-charcoal: #232A27;
+  --color-brand-stone: #636965;
+  --color-brand-canvas: #F5F6F4;
+  --color-brand-white: #FFFFFF;
+  --color-brand-border: #E4E7E5;
+  
+  --radius-brand: 12px;
+}
+
+/* Base resets & typography */
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: #F5F6F4;
+  color: #232A27;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Custom scrollbar for modern feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F6F4;
+}
+::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+.no-scrollbar::-webkit-scrollbar-thumb {
+  display: none !important;
+  background: transparent !important;
+}
+.no-scrollbar::-webkit-scrollbar-track {
+  display: none !important;
+  background: transparent !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Auth Modal responsive auto-scaling on constrained viewport heights */
+.auth-modal-card {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.auth-modal-card::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+@media (max-height: 740px) {
+  .auth-modal-card {
+    padding: 1.125rem 1.25rem !important;
+  }
+  .auth-modal-card .auth-section-gap {
+    margin-bottom: 0.5rem !important;
+  }
+  .auth-modal-card .auth-modal-close-btn {
+    width: 1.75rem !important;
+    height: 1.75rem !important;
+  }
+  .auth-modal-card .auth-tab-btn {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+    font-size: 0.75rem !important;
+  }
+  .auth-modal-card .auth-demo-box {
+    padding: 0.4rem 0.625rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+  .auth-modal-card .auth-divider {
+    margin-bottom: 0.4rem !important;
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  .auth-modal-card .auth-title {
+    font-size: 1rem !important;
+    line-height: 1.25 !important;
+  }
+  .auth-modal-card .auth-subtitle {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+  }
+  .auth-modal-card .auth-form {
+    gap: 0.5rem !important;
+  }
+  .auth-modal-card .auth-form > * + * {
+    margin-top: 0.5rem !important;
+  }
+  .auth-modal-card .auth-input {
+    height: 2.25rem !important;
+    font-size: 0.8125rem !important;
+  }
+  .auth-modal-card label {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.125rem !important;
+  }
+  .auth-modal-card .auth-submit-btn {
+    height: 2.25rem !important;
+    font-size: 0.8125rem !important;
+  }
+  .auth-modal-card .auth-footer {
+    margin-top: 0.5rem !important;
+    padding-top: 0.375rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+@media (max-height: 600px) {
+  .auth-modal-card {
+    padding: 0.75rem 1rem !important;
+    border-radius: 14px !important;
+  }
+  .auth-modal-card .auth-section-gap {
+    margin-bottom: 0.35rem !important;
+  }
+  .auth-modal-card .auth-modal-close-btn {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+  }
+  .auth-modal-card .auth-tab-btn {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+  .auth-modal-card .auth-demo-box {
+    padding: 0.25rem 0.5rem !important;
+    margin-bottom: 0.35rem !important;
+  }
+  .auth-modal-card .auth-divider {
+    margin-bottom: 0.25rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .auth-modal-card .auth-title {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+  }
+  .auth-modal-card .auth-subtitle {
+    font-size: 0.7rem !important;
+    display: none !important;
+  }
+  .auth-modal-card .auth-form > * + * {
+    margin-top: 0.35rem !important;
+  }
+  .auth-modal-card .auth-input {
+    height: 2rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+  }
+  .auth-modal-card label {
+    font-size: 0.7rem !important;
+    margin-bottom: 0 !important;
+  }
+  .auth-modal-card .auth-submit-btn {
+    height: 2rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+  }
+  .auth-modal-card .auth-footer {
+    margin-top: 0.35rem !important;
+    padding-top: 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
