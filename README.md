@@ -94,6 +94,7 @@ cd backend
 npm install
 cp .env.example .env          # completează DATABASE_URL și secretele JWT
 npx prisma migrate dev --name init
+npx prisma db push
 npx prisma db seed
 npm run start:dev
 ```

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { INITIAL_OFFERS, INITIAL_NOTIFICATIONS } from './data/mockData';
 import type { OfferProduct, AINotification, Reservation } from './types';
@@ -74,26 +74,29 @@ function AppContent() {
     };
   }, []);
 
-  // Incarca rezervarile reale ale clientului cand este conectat
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
+
+  const reloadReservations = async () => {
+    if (role !== 'CLIENT' || !user) return;
+    setIsRefreshingOrders(true);
+    try {
+      const data = await fetchMyReservations();
+      if (Array.isArray(data)) setReservations(data);
+    } catch (err) {
+      console.warn('Nu s-au putut prelua rezervarile:', err);
+    } finally {
+      setIsRefreshingOrders(false);
+    }
+  };
+
+  // Incarca rezervarile reale ale clientului cand este conectat sau cand acceseaza tab-ul orders
   useEffect(() => {
     if (role === 'CLIENT' && user) {
-      let isMounted = true;
-      fetchMyReservations()
-        .then((data) => {
-          if (isMounted && Array.isArray(data)) {
-            setReservations(data);
-          }
-        })
-        .catch((err) => {
-          console.warn('Nu s-au putut prelua rezervarile din backend:', err);
-        });
-      return () => {
-        isMounted = false;
-      };
+      reloadReservations();
     } else if (role === 'GUEST') {
       setReservations([]);
     }
-  }, [role, user]);
+  }, [role, user, currentClientTab]);
 
   // Proximitate + recomandari AI (doar clienti si vizitatori; partenerii nu primesc oferte)
   const [guestId] = useState(getGuestId);
@@ -386,6 +389,8 @@ function AppContent() {
             <OrdersPage
               reservations={reservations}
               onExplore={() => setCurrentClientTab('explore')}
+              onRefresh={reloadReservations}
+              isRefreshing={isRefreshingOrders}
             />
           )
         )}
