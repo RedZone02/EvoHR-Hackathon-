@@ -189,7 +189,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
 
       {/* 3. Conținut: Hartă sau Grilă Carduri (Fiecare card se adaptează automat la lățimea celulei) */}
       {viewMode === 'map' ? (
-        <OffersMap />
+        <OffersMap searchQuery={searchLocation} selectedCategory={selectedCategory} />
       ) : filteredOffers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredOffers.map((offer) => (
