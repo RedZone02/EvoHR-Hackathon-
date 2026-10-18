@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { INITIAL_OFFERS, INITIAL_NOTIFICATIONS } from './data/mockData';
 import type { OfferProduct, AINotification, Reservation } from './types';
+import type { PartnerUser } from './types/auth';
 import { Navbar, type NavigationTab } from './components/common/Navbar';
 import { ExplorePage } from './pages/client/ExplorePage';
 import { FavoritesPage } from './pages/client/FavoritesPage/FavoritesPage';
@@ -14,9 +15,17 @@ import { AIRecommendationsModal } from './components/ai/AIRecommendationsModal';
 import { Toast } from './components/ui/Toast';
 import { useNotifications } from './hooks/useNotifications';
 import { useLocationSync } from './hooks/useLocationSync';
-import { fetchRecommendations } from './lib/api';
+import {
+  fetchOffers,
+  createReservation,
+  fetchMyReservations,
+  createOffer,
+  updateOffer,
+  deleteOffer,
+  fetchRecommendations,
+} from './lib/api';
 
-// Id stabil pe sesiune pentru vizitatori, ca să primească și ei notificări de proximitate.
+// Id stabil pe sesiune pentru vizitatori, ca sa primeasca si ei notificari de proximitate.
 const getGuestId = (): string => {
   const fresh = `guest-${Math.random().toString(36).slice(2, 10)}`;
   try {
@@ -24,7 +33,7 @@ const getGuestId = (): string => {
     if (saved) return saved;
     sessionStorage.setItem('savebite-guest-id', fresh);
   } catch {
-    // Storage blocat (mod privat): id nou la fiecare încărcare.
+    // Storage blocat (mod privat): id nou la fiecare incarcare.
   }
   return fresh;
 };
@@ -36,19 +45,8 @@ function AppContent() {
   const [favorites, setFavorites] = useState<string[]>(['offer-2']);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  // Rezervări active ale clientului
-  const [reservations, setReservations] = useState<Reservation[]>([
-    {
-      id: 'res-894120',
-      offerId: 'offer-2',
-      offerTitle: 'Cutie Surpriză Croissante & Pain au Chocolat',
-      storeName: 'Café & Pâtisserie Délice',
-      price: 14.00,
-      pickupWindow: 'azi: 17:00 - 19:30',
-      status: 'reserved',
-      createdAt: 'Astăzi, 14:20',
-    },
-  ]);
+  // Rezervari ale clientului (din backend SQL cand este autentificat)
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
   // Stare pentru Toast-uri active
   const [activeToast, setActiveToast] = useState<{
@@ -58,11 +56,53 @@ function AppContent() {
     description: string;
   } | null>(null);
 
-  // Proximitate + recomandări AI (doar clienți și vizitatori; partenerii nu primesc oferte)
+  // Incarca ofertele din baza de date la pornire
+  useEffect(() => {
+    let isMounted = true;
+    fetchOffers()
+      .then((data) => {
+        if (isMounted && data && data.length > 0) {
+          setOffers(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Oferte backend indisponibile, fallback pe date demo:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
+
+  const reloadReservations = async () => {
+    if (role !== 'CLIENT' || !user) return;
+    setIsRefreshingOrders(true);
+    try {
+      const data = await fetchMyReservations();
+      if (Array.isArray(data)) setReservations(data);
+    } catch (err) {
+      console.warn('Nu s-au putut prelua rezervarile:', err);
+    } finally {
+      setIsRefreshingOrders(false);
+    }
+  };
+
+  // Incarca rezervarile reale ale clientului cand este conectat sau cand acceseaza tab-ul orders
+  useEffect(() => {
+    if (role === 'CLIENT' && user) {
+      reloadReservations();
+    } else if (role === 'GUEST') {
+      setReservations([]);
+    }
+  }, [role, user, currentClientTab]);
+
+  // Proximitate + recomandari AI (doar clienti si vizitatori; partenerii nu primesc oferte)
   const [guestId] = useState(getGuestId);
   const liveUserId = role === 'PARTNER' ? null : user?.id ?? guestId;
 
-  // Preferințe = categoriile ofertelor favorite
+  // Preferinte = categoriile ofertelor favorite
   const preferencesKey = [...new Set(
     offers.filter((o) => favorites.includes(o.id) && o.category !== 'all').map((o) => o.category),
   )].sort().join(',');
@@ -83,7 +123,7 @@ function AppContent() {
     return () => controller.abort();
   }, [liveUserId, position, preferences]);
 
-  // Notificări live din backend (SSE) → Toast-ul existent + lista din modalul AI
+  // Notificari live din backend (SSE) -> Toast-ul existent + lista din modalul AI
   useNotifications(liveUserId, (message) => {
     setActiveToast({
       id: message.id,
@@ -95,7 +135,7 @@ function AppContent() {
     if (incoming) setStreamedNotifications((prev) => [incoming, ...prev].slice(0, 20));
   });
 
-  // Fără backend (sau înainte de prima locație) rămân notificările demo.
+  // Notificari
   const notifications = useMemo(() => {
     const seen = new Set<string>();
     return [...streamedNotifications, ...(apiRecommendations ?? INITIAL_NOTIFICATIONS)].filter((n) => {
@@ -106,9 +146,8 @@ function AppContent() {
     });
   }, [streamedNotifications, apiRecommendations]);
 
-  // Rezervare pachet (scade stocul, adaugă în comenzile mele și declanșează Toast)
-  const handleReserve = (offerToReserve: OfferProduct) => {
-    // DACĂ UTILIZATORUL ESTE VIZITATOR NEAUTENTIFICAT (GUEST):
+  // Rezervare pachet conectata la baza de date MySQL prin backend
+  const handleReserve = async (offerToReserve: OfferProduct) => {
     if (!user || role === 'GUEST') {
       setActiveToast({
         id: `toast-${Date.now()}`,
@@ -122,40 +161,40 @@ function AppContent() {
 
     if (offerToReserve.itemsLeft <= 0) return;
 
-    // Scădere stoc
-    setOffers((prev) =>
-      prev.map((o) =>
-        o.id === offerToReserve.id
-          ? { ...o, itemsLeft: Math.max(0, o.itemsLeft - 1) }
-          : o
-      )
-    );
+    try {
+      const createdRes = await createReservation(offerToReserve.id);
 
-    // Creare rezervare nouă
-    const newReservation: Reservation = {
-      id: `res-${Math.floor(100000 + Math.random() * 900000)}`,
-      offerId: offerToReserve.id,
-      offerTitle: offerToReserve.title,
-      storeName: offerToReserve.storeName,
-      price: offerToReserve.discountedPrice,
-      pickupWindow: offerToReserve.pickupWindow,
-      status: 'reserved',
-      createdAt: 'Chiar acum',
-    };
-    setReservations((prev) => [newReservation, ...prev]);
+      // Scadere stoc local
+      setOffers((prev) =>
+        prev.map((o) =>
+          o.id === offerToReserve.id
+            ? { ...o, itemsLeft: Math.max(0, o.itemsLeft - 1) }
+            : o
+        )
+      );
 
-    // Notificare Toast
-    setActiveToast({
-      id: `toast-${Date.now()}`,
-      type: 'success',
-      title: 'Punga ta este rezervată',
-      description: `Deschide detaliile pentru instrucțiuni de ridicare la ${offerToReserve.storeName}. Interval: ${offerToReserve.pickupWindow}.`,
-    });
+      // Adaugare la rezervari active
+      setReservations((prev) => [createdRes, ...prev]);
+
+      // Notificare Toast cu codul real din baza de date
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: `Punga ta este rezervată! Cod: ${createdRes.pickupCode}`,
+        description: `Arată codul "${createdRes.pickupCode}" la casa ${offerToReserve.storeName}. Interval: ${offerToReserve.pickupWindow}.`,
+      });
+    } catch (err: any) {
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'alert',
+        title: 'Eroare la rezervare',
+        description: err?.message || 'Ne pare rău, nu s-a putut salva rezervarea în baza de date.',
+      });
+    }
   };
 
   // Toggle favorite
   const handleToggleFavorite = (offerId: string) => {
-    // DACĂ UTILIZATORUL ESTE VIZITATOR NEAUTENTIFICAT (GUEST):
     if (!user || role === 'GUEST') {
       setActiveToast({
         id: `toast-${Date.now()}`,
@@ -172,39 +211,87 @@ function AppContent() {
     );
   };
 
-  // Partener: Actualizare stoc de către magazin
-  const handleUpdateStock = (productId: string, newStock: number) => {
-    setOffers((prev) =>
-      prev.map((o) => (o.id === productId ? { ...o, itemsLeft: newStock } : o))
-    );
+  // Partener: Actualizare stoc in baza de date
+  const handleUpdateStock = async (productId: string, newStock: number) => {
+    try {
+      await updateOffer(productId, { itemsLeft: newStock });
+      setOffers((prev) =>
+        prev.map((o) => (o.id === productId ? { ...o, itemsLeft: newStock } : o))
+      );
+    } catch {
+      setOffers((prev) =>
+        prev.map((o) => (o.id === productId ? { ...o, itemsLeft: newStock } : o))
+      );
+    }
   };
 
-  // Partener: Ștergere produs din catalog
-  const handleDeleteProduct = (productId: string) => {
-    setOffers((prev) => prev.filter((o) => o.id !== productId));
-    setActiveToast({
-      id: `toast-${Date.now()}`,
-      type: 'alert',
-      title: 'Ofertă eliminată din catalog',
-      description: 'Pachetul a fost retras din feed-ul public.',
-    });
+  // Partener: Stergere produs din baza de date
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteOffer(productId);
+      setOffers((prev) => prev.filter((o) => o.id !== productId));
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'alert',
+        title: 'Ofertă eliminată din baza de date',
+        description: 'Pachetul a fost retras din catalogul public.',
+      });
+    } catch (err: any) {
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'alert',
+        title: 'Eroare la ștergere',
+        description: err?.message || 'Nu s-a putut șterge oferta.',
+      });
+    }
   };
 
-  // Partener: Salvare produs nou creat de magazin (manual sau AI)
-  const handleSaveNewProduct = (newProduct: OfferProduct) => {
-    setOffers((prev) => [newProduct, ...prev]);
-    setActiveToast({
-      id: `toast-${Date.now()}`,
-      type: 'success',
-      title: 'Pachet publicat cu succes!',
-      description: `${newProduct.title} este acum vizibil pentru clienții din proximitate.`,
-    });
+  // Partener: Salvare produs nou in baza de date
+  const handleSaveNewProduct = async (newProduct: OfferProduct) => {
+    try {
+      const created = await createOffer({
+        title: newProduct.title,
+        description: newProduct.description,
+        category: newProduct.category === 'all' ? 'bakery' : newProduct.category,
+        categoryLabel: newProduct.categoryLabel,
+        imageUrl: newProduct.imageUrl,
+        originalPrice: newProduct.originalPrice,
+        discountedPrice: newProduct.discountedPrice,
+        itemsLeft: newProduct.itemsLeft,
+        expiresInMinutes: newProduct.expiresInMinutes,
+        pickupWindow: newProduct.pickupWindow,
+      });
+
+      // Mapare oferta returnata
+      setOffers((prev) => [created, ...prev]);
+
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: 'Pachet salvat în baza de date SQL!',
+        description: `${newProduct.title} este acum vizibil pentru toți clienții.`,
+      });
+    } catch (err: any) {
+      setOffers((prev) => [newProduct, ...prev]);
+      setActiveToast({
+        id: `toast-${Date.now()}`,
+        type: 'success',
+        title: 'Pachet publicat!',
+        description: `${newProduct.title} a fost adăugat în listă.`,
+      });
+    }
   };
 
   // ==========================================
-  // DACĂ UTILIZATORUL ESTE PARTENER (MAGAZIN/RESTAURANT):
+  // DACA UTILIZATORUL ESTE PARTENER (MAGAZIN/RESTAURANT):
+  // FILTRARE STRICTA: PARTENERUL ISI GESTIONEAZA DOAR PRODUSELE PROPRII
   // ==========================================
   if (role === 'PARTNER') {
+    const partnerStoreId = (user as PartnerUser)?.storeId || (user as any)?.store?.id;
+    const partnerProducts = partnerStoreId
+      ? offers.filter((o) => o.storeId === partnerStoreId)
+      : offers;
+
     return (
       <>
         {activeToast && (
@@ -219,7 +306,7 @@ function AppContent() {
         )}
 
         <PartnerSaaSLayout
-          products={offers}
+          products={partnerProducts}
           onUpdateStock={handleUpdateStock}
           onDeleteProduct={handleDeleteProduct}
           onSaveNewProduct={handleSaveNewProduct}
@@ -231,7 +318,7 @@ function AppContent() {
   }
 
   // ==========================================
-  // DACĂ UTILIZATORUL ESTE CLIENT SAU GUEST:
+  // DACA UTILIZATORUL ESTE CLIENT SAU GUEST:
   // ==========================================
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F6F4] text-[#232A27]">
@@ -247,7 +334,7 @@ function AppContent() {
         </div>
       )}
 
-      {/* Bară de navigare exclusiv Client */}
+      {/* Bara de navigare exclusiv Client */}
       <Navbar
         currentTab={currentClientTab}
         onSelectTab={setCurrentClientTab}
@@ -255,7 +342,7 @@ function AppContent() {
         ordersCount={role === 'GUEST' ? 0 : reservations.length}
       />
 
-      {/* Conținut Aplicație Client / Vizitator */}
+      {/* Continut Aplicatie Client / Vizitator */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {currentClientTab === 'explore' && (
           <ExplorePage
@@ -302,6 +389,8 @@ function AppContent() {
             <OrdersPage
               reservations={reservations}
               onExplore={() => setCurrentClientTab('explore')}
+              onRefresh={reloadReservations}
+              isRefreshing={isRefreshingOrders}
             />
           )
         )}
@@ -320,7 +409,7 @@ function AppContent() {
         )}
       </main>
 
-      {/* Modal Recomandări & Notificări AI */}
+      {/* Modal Recomandari & Notificari AI */}
       <AIRecommendationsModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}
@@ -351,7 +440,7 @@ function AppContent() {
               Ai o brutărie sau un restaurant? Intră în SaveBite Partners!
             </button>
             <span className="hidden sm:inline">·</span>
-            <span className="whitespace-nowrap">© 2026 SaveBite România • EvoHR</span>
+            <span className="whitespace-nowrap">© 2026 SaveBite România — EvoHR</span>
           </div>
         </div>
       </footer>

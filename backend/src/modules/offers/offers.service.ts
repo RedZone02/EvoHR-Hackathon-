@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
@@ -8,10 +9,26 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateOfferDto } from './dto/create-offer.dto';
 import { UpdateOfferDto } from './dto/update-offer.dto';
 import { ProductCategory, OfferStatus } from '@prisma/client';
+import {
+  OfferSnapshot,
+  ProximityWatcherService,
+} from '../ai-map-notification/notifications/proximity-watcher.service';
 
 @Injectable()
 export class OffersService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(OffersService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly proximityWatcher: ProximityWatcherService,
+  ) {}
+
+  // Notifică clienții din apropiere fără să întârzie răspunsul către partener.
+  private notifyNearbyClients(offerId: string, previous?: OfferSnapshot, current?: OfferSnapshot) {
+    this.proximityWatcher.onOfferSaved(offerId, previous, current).catch((err: unknown) => {
+      this.logger.warn(`Notificarea clienților a eșuat: ${err instanceof Error ? err.message : String(err)}`);
+    });
+  }
 
   // 1. Toate ofertele active cu calcul de distanță opțional
   async findAll(params: {
@@ -111,7 +128,7 @@ export class OffersService {
       ((dto.originalPrice - dto.discountedPrice) / dto.originalPrice) * 100,
     );
 
-    return this.prisma.offer.create({
+    const created = await this.prisma.offer.create({
       data: {
         storeId: store.id,
         title: dto.title.trim(),
@@ -128,6 +145,9 @@ export class OffersService {
         status: dto.status || OfferStatus.ACTIVE,
       },
     });
+
+    this.notifyNearbyClients(created.id);
+    return created;
   }
 
   // 4. Actualizare Ofertă cu verificare de proprietate strictă
@@ -155,7 +175,7 @@ export class OffersService {
 
     discountPercentage = Math.round(((origPrice - discPrice) / origPrice) * 100);
 
-    return this.prisma.offer.update({
+    const updated = await this.prisma.offer.update({
       where: { id: offerId },
       data: {
         ...dto,
@@ -163,6 +183,10 @@ export class OffersService {
         status: dto.itemsLeft === 0 ? OfferStatus.SOLD_OUT : (dto.status || offer.status),
       },
     });
+
+    // Doar reducere de preț, revenire în stoc sau reactivare declanșează notificări.
+    this.notifyNearbyClients(updated.id, offer, updated);
+    return updated;
   }
 
   // 5. Ștergere Ofertă cu verificare de proprietate strictă

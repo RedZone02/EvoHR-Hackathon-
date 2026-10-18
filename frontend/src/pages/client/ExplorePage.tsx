@@ -129,7 +129,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
 
       {/* 2. Bară Căutare & Filtre Integrată */}
       <section id="explore-catalog" className="bg-white rounded-[16px] p-3.5 sm:p-4 border border-[#E4E7E5] shadow-xs space-y-3">
-        {/* Input căutare + Switch alertă + Buton Hartă/Listă */}
+        {/* Input căutare + Switch alertă proximitate */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="relative flex-1 min-w-0">
             <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#30634E] pointer-events-none">
@@ -164,39 +164,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
               label="Alerte proximitate"
             />
 
-            {/* Buton comutare direct din bara de căutare pentru acces instant pe orice ecran */}
-            <button
-              type="button"
-              onClick={() => {
-                const nextMode = viewMode === 'grid' ? 'map' : 'grid';
-                setViewMode(nextMode);
-                if (nextMode === 'map') {
-                  setTimeout(() => {
-                    document.getElementById('map-view-container')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 50);
-                }
-              }}
-              className={`
-                inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[10px] text-xs font-bold transition-all cursor-pointer shrink-0 border
-                ${viewMode === 'map'
-                  ? 'bg-[#30634E] text-white border-[#30634E] shadow-xs'
-                  : 'bg-white text-[#232A27] border-[#E4E7E5] hover:bg-[#F5F6F4]'
-                }
-              `}
-              title={viewMode === 'map' ? 'Comută la vizualizare listă' : 'Comută la vizualizare hartă'}
-            >
-              {viewMode === 'map' ? (
-                <>
-                  <Grid className="w-3.5 h-3.5 text-[#DAF2EC]" />
-                  <span>Listă</span>
-                </>
-              ) : (
-                <>
-                  <MapIcon className="w-3.5 h-3.5 text-[#30634E]" />
-                  <span>Hartă</span>
-                </>
-              )}
-            </button>
+            
           </div>
         </div>
 
@@ -221,7 +189,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
 
       {/* 3. Conținut: Hartă sau Grilă Carduri (Fiecare card se adaptează automat la lățimea celulei) */}
       {viewMode === 'map' ? (
-        <OffersMap />
+        <OffersMap searchQuery={searchLocation} selectedCategory={selectedCategory} />
       ) : filteredOffers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredOffers.map((offer) => (

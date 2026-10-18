@@ -17,10 +17,15 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { ProximityService } from '../ai-map-notification/proximity/proximity.service';
+import { parseCoordinate, parseRadius } from '../ai-map-notification/proximity/query';
 
 @Controller('offers')
 export class OffersController {
-  constructor(private readonly offersService: OffersService) {}
+  constructor(
+    private readonly offersService: OffersService,
+    private readonly proximityService: ProximityService,
+  ) {}
 
   @Get()
   async findAll(
@@ -35,6 +40,21 @@ export class OffersController {
       lng: lng ? parseFloat(lng) : undefined,
       maxDistanceMeters: radius ? parseInt(radius, 10) : undefined,
     });
+  }
+
+  // Pentru hartă (modulul ai-map-notification). Trebuie să rămână înainte de ':id'.
+  @Get('nearby')
+  async nearby(
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('radius') radius?: string,
+  ) {
+    const offers = await this.proximityService.nearby(
+      parseCoordinate(lat, 'lat'),
+      parseCoordinate(lng, 'lng'),
+      parseRadius(radius, 2000),
+    );
+    return offers.map(ProximityService.toDto);
   }
 
   @Get(':id')

@@ -41,7 +41,8 @@ export interface Reservation {
   storeName: string;
   price: number;
   pickupWindow: string;
-  status: 'reserved' | 'collected' | 'cancelled';
+  pickupCode?: string;
+  status: 'reserved' | 'collected' | 'cancelled' | 'RESERVED' | 'COLLECTED' | 'CANCELLED';
   createdAt: string;
 }
 

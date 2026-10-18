@@ -8,6 +8,7 @@ import { StoresModule } from './modules/stores/stores.module';
 import { OffersModule } from './modules/offers/offers.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AiMapNotificationModule } from './modules/ai-map-notification/ai-map-notification.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -30,6 +31,7 @@ import { AppService } from './app.service';
     OffersModule,
     ReservationsModule,
     AdminModule,
+    AiMapNotificationModule,
   ],
   controllers: [AppController],
   providers: [
