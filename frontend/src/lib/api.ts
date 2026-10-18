@@ -10,8 +10,17 @@ export const apiUrl = (path: string): string => {
   if (!API_URL) {
     throw new Error('VITE_API_URL nu este setat. Adaugă-l în frontend/.env.local.');
   }
-  return new URL(path, API_URL).toString();
+  // Concatenare, nu new URL(): păstrează un prefix din VITE_API_URL (ex. http://localhost:3000/api).
+  return `${API_URL.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 };
+
+/** Backend-ul răspunde cu { success, statusCode, data, timestamp }; întoarcem doar `data`. */
+async function readData<T>(res: Response): Promise<T> {
+  const body = (await res.json()) as { success?: boolean; data?: T } | T;
+  return body !== null && typeof body === 'object' && 'success' in body && 'data' in body
+    ? (body.data as T)
+    : (body as T);
+}
 
 export async function fetchNearbyOffers(
   lat: number,
@@ -28,7 +37,7 @@ export async function fetchNearbyOffers(
   if (!res.ok) {
     throw new Error(`GET /offers/nearby a eșuat (${res.status})`);
   }
-  return res.json() as Promise<Offer[]>;
+  return readData<Offer[]>(res);
 }
 
 export interface LocationUpdate {
@@ -64,5 +73,5 @@ export async function fetchRecommendations(
   if (!res.ok) {
     throw new Error(`GET /recommendations a eșuat (${res.status})`);
   }
-  return res.json() as Promise<AINotification[]>;
+  return readData<AINotification[]>(res);
 }

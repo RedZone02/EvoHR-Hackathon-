@@ -151,3 +151,15 @@ model AuditLog {
   @@index([userId, action])
   @@index([createdAt])
 }
+
+// Ultima locație + preferințele unui client, pentru notificări de proximitate (modulul ai-map-notification).
+// Fără cheie străină: păstrează și vizitatorii neautentificați (id-uri "guest-...").
+model UserLocation {
+  userId      String   @id @db.VarChar(128)
+  latitude    Float
+  longitude   Float
+  preferences Json // listă de ProductCategory, ex. ["bakery","pastry"]
+  updatedAt   DateTime @updatedAt
+
+  @@index([updatedAt])
+}
