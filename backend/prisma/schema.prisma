@@ -1,0 +1,153 @@
+// Prisma schema for SaveBite - MySQL Database Provider
+// Strict relational model with indexes for geolocation, auditing, and secure transactions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  PARTNER
+  ADMIN
+}
+
+enum ProductCategory {
+  bakery
+  restaurant
+  grocery
+  cafe
+  pastry
+}
+
+enum OfferStatus {
+  ACTIVE
+  SOLD_OUT
+  EXPIRED
+}
+
+enum ReservationStatus {
+  RESERVED
+  COLLECTED
+  CANCELLED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         Role          @default(CLIENT)
+  phone        String?
+  neighborhood String?
+  savedBags    Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relații
+  store        Store?
+  reservations Reservation[]
+  refreshTokens RefreshToken[]
+  auditLogs    AuditLog[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isRevoked Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Store {
+  id                 String          @id @default(uuid())
+  ownerId            String          @unique
+  owner              User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name               String
+  businessName       String
+  cui                String          @unique
+  category           ProductCategory @default(bakery)
+  categoryLabel      String
+  address            String
+  city               String          @default("Iași")
+  latitude           Float
+  longitude          Float
+  phone              String?
+  rating             Float           @default(5.0)
+  isOpenForPickup    Boolean         @default(true)
+  activeRevenueRon   Float           @default(0.0)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  offers             Offer[]
+
+  @@index([city, category])
+  @@index([latitude, longitude])
+}
+
+model Offer {
+  id                 String          @id @default(uuid())
+  storeId            String
+  store              Store           @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  title              String
+  description        String          @db.Text
+  category           ProductCategory @default(bakery)
+  categoryLabel      String
+  imageUrl           String          @db.VarChar(1024)
+  originalPrice      Float
+  discountedPrice    Float
+  discountPercentage Int
+  itemsLeft          Int             @default(1)
+  expiresInMinutes   Int             @default(60)
+  pickupWindow       String
+  status             OfferStatus     @default(ACTIVE)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  reservations       Reservation[]
+
+  @@index([storeId, status])
+  @@index([status, createdAt])
+}
+
+model Reservation {
+  id           String            @id @default(uuid())
+  offerId      String
+  offer        Offer             @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Restrict)
+  price        Float
+  pickupWindow String
+  pickupCode   String            @unique // Cod de revendicare prezentat la tejghea
+  status       ReservationStatus @default(RESERVED)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([userId, status])
+  @@index([offerId])
+  @@index([pickupCode])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String   // ex: "AUTH_LOGIN", "RESERVATION_CREATE", "OFFER_STOCK_UPDATE"
+  ipAddress  String?
+  userAgent  String?
+  details    String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([userId, action])
+  @@index([createdAt])
+}

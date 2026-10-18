@@ -1,0 +1,276 @@
+import React, { useState } from 'react';
+import { User, Store, X, ArrowRight, Zap } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+
+export const AuthModal: React.FC = () => {
+  const { isAuthModalOpen, closeAuthModal, loginAsClient, loginAsPartner, authModalDefaultTab } = useAuth();
+  const [activeTab, setActiveTab] = useState<'client' | 'partner'>(authModalDefaultTab);
+  const [isRegister, setIsRegister] = useState(false);
+
+  // Form states
+  const [clientName, setClientName] = useState('Alexandru Popa');
+  const [clientEmail, setClientEmail] = useState('alexandru.popa@gmail.com');
+  const [businessName, setBusinessName] = useState('Brutăria Cuptorul Fermecat SRL');
+  const [businessEmail, setBusinessEmail] = useState('parteneri@cuptorulfermecat.ro');
+  const [businessCui, setBusinessCui] = useState('RO39281740');
+
+  // Sincronizare cu tab-ul cerut la deschidere
+  React.useEffect(() => {
+    setActiveTab(authModalDefaultTab);
+  }, [authModalDefaultTab, isAuthModalOpen]);
+
+  if (!isAuthModalOpen) return null;
+
+  const handleClientSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginAsClient({ name: clientName, email: clientEmail });
+  };
+
+  const handlePartnerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loginAsPartner({ businessName, email: businessEmail, cui: businessCui });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-fadeIn overflow-y-auto no-scrollbar">
+      <div className="auth-modal-card bg-white rounded-[20px] max-w-md w-full p-5 sm:p-6 shadow-2xl border border-[#E4E7E5] text-left relative my-auto max-h-[96vh] overflow-y-auto no-scrollbar">
+        {/* Header cu Titlu Secțiune și Buton Închidere (poziționat mai sus, separat de tab-uri) */}
+        <div className="flex items-center justify-between mb-1.5 sm:mb-2.5">
+          <span className="text-[10.5px] sm:text-[11px] font-bold uppercase tracking-wider text-[#636965]">
+            Alege tipul de cont
+          </span>
+          <button
+            type="button"
+            onClick={closeAuthModal}
+            className="auth-modal-close-btn w-8 h-8 rounded-full text-[#636965] hover:text-[#B94330] hover:bg-[#FDE5E0] flex items-center justify-center transition-colors cursor-pointer shrink-0 -mr-1 -mt-1"
+            title="Închide fereastra"
+          >
+            <X className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          </button>
+        </div>
+
+        {/* Selector Tip Cont: B2C vs B2B */}
+        <div className="auth-section-gap mb-3 sm:mb-4">
+          <div className="grid grid-cols-2 gap-1 p-1 bg-[#F5F6F4] rounded-[12px]">
+            <button
+              type="button"
+              onClick={() => setActiveTab('client')}
+              className={`
+                auth-tab-btn flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[9px] text-xs font-bold transition-all cursor-pointer
+                ${activeTab === 'client'
+                  ? 'bg-white text-[#30634E] shadow-xs'
+                  : 'text-[#636965] hover:text-[#232A27]'
+                }
+              `}
+            >
+              <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>Cont Client</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('partner')}
+              className={`
+                auth-tab-btn flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-[9px] text-xs font-bold transition-all cursor-pointer
+                ${activeTab === 'partner'
+                  ? 'bg-[#30634E] text-white shadow-xs'
+                  : 'text-[#636965] hover:text-[#232A27]'
+                }
+              `}
+            >
+              <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span>Partener B2B</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Buton 1-Click Demo pentru Hackathon */}
+        <div className="auth-demo-box mb-3 p-2.5 rounded-[12px] bg-[#DAF2EC]/60 border border-[#30634E]/20">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10.5px] sm:text-[11px] font-bold text-[#30634E] flex items-center gap-1">
+              <Zap className="w-3 h-3 fill-current shrink-0" /> Acces rapid pentru prezentare:
+            </span>
+          </div>
+          {activeTab === 'client' ? (
+            <button
+              type="button"
+              onClick={() => loginAsClient()}
+              className="w-full py-1.5 px-2.5 rounded-[8px] bg-white hover:bg-white/80 text-[11px] sm:text-xs font-bold text-[#30634E] border border-[#30634E]/30 text-left transition-colors shadow-2xs cursor-pointer flex items-center justify-between gap-1.5"
+            >
+              <span className="leading-snug truncate">Intră instant ca <strong>Alexandru (Client)</strong></span>
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => loginAsPartner()}
+              className="w-full py-1.5 px-2.5 rounded-[8px] bg-[#30634E] hover:bg-[#275240] text-[11px] sm:text-xs font-bold text-white text-left transition-colors shadow-2xs cursor-pointer flex items-center justify-between gap-1.5"
+            >
+              <span className="leading-snug truncate">Intră în <strong>SaveBite Partners (Brutărie)</strong></span>
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+            </button>
+          )}
+        </div>
+
+        {/* Separator */}
+        <div className="auth-divider relative flex py-1 items-center mb-2.5">
+          <div className="flex-grow border-t border-[#E4E7E5]"></div>
+          <span className="flex-shrink mx-2.5 text-[10px] sm:text-[10.5px] text-[#636965] uppercase font-semibold">
+            sau autentificare manuală
+          </span>
+          <div className="flex-grow border-t border-[#E4E7E5]"></div>
+        </div>
+
+        {/* Formular Client B2C */}
+        {activeTab === 'client' ? (
+          <form onSubmit={handleClientSubmit} className="auth-form space-y-3">
+            <div>
+              <h2 className="auth-title text-base sm:text-lg font-bold text-[#232A27] leading-tight">
+                {isRegister ? 'Creează cont de Client' : 'Conectare Client'}
+              </h2>
+              <p className="auth-subtitle text-xs text-[#636965]">
+                Salvează mâncare proaspătă de la restaurantele din apropiere.
+              </p>
+            </div>
+
+            {isRegister && (
+              <Input
+                label="Nume complet"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Ex: Alexandru Popa"
+                className="auth-input !h-10 !text-xs sm:!text-sm"
+                required
+              />
+            )}
+
+            <Input
+              type="email"
+              label="Adresă email"
+              value={clientEmail}
+              onChange={(e) => setClientEmail(e.target.value)}
+              placeholder="nume@exemplu.ro"
+              className="auth-input !h-10 !text-xs sm:!text-sm"
+              required
+            />
+
+            <Input
+              type="password"
+              label="Parolă"
+              defaultValue="parola123"
+              placeholder="••••••••"
+              className="auth-input !h-10 !text-xs sm:!text-sm"
+              required
+            />
+
+            <div className="pt-1">
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                className="auth-submit-btn !h-10 !text-xs sm:!text-sm font-bold"
+              >
+                {isRegister ? 'Înregistrează-te ca și Client' : 'Conectează-te'}
+              </Button>
+            </div>
+          </form>
+        ) : (
+          /* Formular Partener B2B SaaS */
+          <form onSubmit={handlePartnerSubmit} className="auth-form space-y-3">
+            <div>
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#30634E] text-white text-[9.5px] font-bold mb-0.5">
+                Platformă B2B SaaS
+              </div>
+              <h2 className="auth-title text-base sm:text-lg font-bold text-[#232A27] leading-tight">
+                {isRegister ? 'Înregistrare Afacere / Magazin' : 'Autentificare SaveBite Partners'}
+              </h2>
+              <p className="auth-subtitle text-xs text-[#636965]">
+                Monetizează surplusul alimentar al afacerii tale.
+              </p>
+            </div>
+
+            {isRegister && (
+              <>
+                <Input
+                  label="Denumire Companie / Magazin"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="Ex: Brutăria Cuptorul Fermecat SRL"
+                  className="auth-input !h-10 !text-xs sm:!text-sm"
+                  required
+                />
+                <Input
+                  label="Cod Unic de Înregistrare (CUI)"
+                  value={businessCui}
+                  onChange={(e) => setBusinessCui(e.target.value)}
+                  placeholder="Ex: RO12345678"
+                  className="auth-input !h-10 !text-xs sm:!text-sm"
+                  required
+                />
+              </>
+            )}
+
+            <Input
+              type="email"
+              label="Email afacere / contact"
+              value={businessEmail}
+              onChange={(e) => setBusinessEmail(e.target.value)}
+              placeholder="manager@afacere.ro"
+              className="auth-input !h-10 !text-xs sm:!text-sm"
+              required
+            />
+
+            <Input
+              type="password"
+              label="Parolă cont partener"
+              defaultValue="parola123"
+              placeholder="••••••••"
+              className="auth-input !h-10 !text-xs sm:!text-sm"
+              required
+            />
+
+            <div className="pt-1">
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                className="auth-submit-btn !h-10 !text-xs sm:!text-sm font-bold"
+              >
+                {isRegister ? 'Creează Cont Partener B2B' : 'Intră în Panoul Magazinului'}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* Comutare între Conectare și Înregistrare */}
+        <div className="auth-footer mt-3 pt-2 border-t border-[#F5F6F4] text-center text-xs text-[#636965]">
+          {isRegister ? (
+            <span>
+              Ai deja un cont?{' '}
+              <button
+                type="button"
+                onClick={() => setIsRegister(false)}
+                className="font-bold text-[#30634E] hover:underline cursor-pointer"
+              >
+                Conectează-te aici
+              </button>
+            </span>
+          ) : (
+            <span>
+              Nu ai încă un cont?{' '}
+              <button
+                type="button"
+                onClick={() => setIsRegister(true)}
+                className="font-bold text-[#30634E] hover:underline cursor-pointer"
+              >
+                Înregistrează-te gratuit
+              </button>
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
