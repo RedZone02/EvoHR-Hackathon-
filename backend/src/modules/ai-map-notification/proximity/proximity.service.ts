@@ -32,6 +32,7 @@ export class ProximityService {
       id: o.id,
       shopName: o.shopName,
       product: o.product,
+      category: o.category,
       priceOriginal: o.priceOriginal,
       priceDiscounted: o.priceDiscounted,
       lat: o.lat,

@@ -9,6 +9,7 @@ export interface NearbyOfferDto {
   id: string;
   shopName: string;
   product: string;
+  category: ProductCategory;
   priceOriginal: number;
   priceDiscounted: number;
   lat: number;
