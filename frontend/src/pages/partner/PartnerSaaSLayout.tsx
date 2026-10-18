@@ -49,11 +49,11 @@ export const PartnerSaaSLayout: React.FC<PartnerSaaSLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-[#F0F2EE] text-[#232A27] flex flex-col text-left">
-      {/* 1. Header B2B SaaS (Stil Glovo Partners / Store Manager) */}
+      {/* 1. Header Partener Magazin */}
       <header className="bg-white border-b border-[#E4E7E5] sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 sm:h-18">
-            {/* Logo B2B SaaS */}
+            {/* Logo Panou Partener */}
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-[12px] bg-[#30634E] text-white flex items-center justify-center font-extrabold text-lg sm:text-xl shadow-xs shrink-0">
                 S
@@ -115,7 +115,7 @@ export const PartnerSaaSLayout: React.FC<PartnerSaaSLayoutProps> = ({
             </div>
           </div>
 
-          {/* Tab-uri Navigare B2B SaaS: Centrate pe desktop/tabletă și 2x2 pe mobil, fără overflow */}
+          {/* Tab-uri Navigare Partener: Centrate pe desktop/tabletă și 2x2 pe mobil, fără overflow */}
           <div className="grid grid-cols-2 lg:flex lg:justify-center lg:items-center gap-1.5 sm:gap-2 py-2 border-t border-[#F5F6F4] w-full max-w-2xl lg:max-w-none mx-auto">
             <button
               type="button"
@@ -191,9 +191,9 @@ export const PartnerSaaSLayout: React.FC<PartnerSaaSLayoutProps> = ({
         </div>
       </header>
 
-      {/* 2. Conținut B2B SaaS */}
+      {/* 2. Conținut Panou Partener */}
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 space-y-6">
-        {/* Banner Informații B2B */}
+        {/* Banner Informații Partener */}
         <div className="bg-white rounded-[16px] p-3.5 sm:p-4 border border-[#E4E7E5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-[#DAF2EC] text-[#30634E] flex items-center justify-center font-bold shrink-0">
@@ -211,7 +211,7 @@ export const PartnerSaaSLayout: React.FC<PartnerSaaSLayoutProps> = ({
 
           <div className="flex items-center gap-2 shrink-0">
             <span className="text-[#636965]">Comision platformă: <strong>15%</strong></span>
-            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">SaaS Activ</span>
+            <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">Cont Activ</span>
           </div>
         </div>
 
@@ -325,10 +325,10 @@ export const PartnerSaaSLayout: React.FC<PartnerSaaSLayoutProps> = ({
         )}
       </main>
 
-      {/* Subsol B2B SaaS */}
+      {/* Subsol Parteneri */}
       <footer className="mt-auto border-t border-[#E4E7E5] bg-white py-4 text-xs text-[#636965]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
-          <span>SaveBite B2B SaaS Platform · Iași, România</span>
+          <span>SaveBite Partners · Portal Comercianți · Iași, România</span>
           <span>Versiune Magazin: 2.4.0-prod</span>
         </div>
       </footer>

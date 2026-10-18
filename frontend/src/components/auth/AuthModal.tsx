@@ -51,7 +51,7 @@ export const AuthModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Selector Tip Cont: B2C vs B2B */}
+        {/* Selector Tip Cont: Client vs Partener */}
         <div className="auth-section-gap mb-3 sm:mb-4">
           <div className="grid grid-cols-2 gap-1 p-1 bg-[#F5F6F4] rounded-[12px]">
             <button
@@ -81,7 +81,7 @@ export const AuthModal: React.FC = () => {
               `}
             >
               <Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-              <span>Partener B2B</span>
+              <span>Cont Partener</span>
             </button>
           </div>
         </div>
@@ -123,7 +123,7 @@ export const AuthModal: React.FC = () => {
           <div className="flex-grow border-t border-[#E4E7E5]"></div>
         </div>
 
-        {/* Formular Client B2C */}
+        {/* Formular Client */}
         {activeTab === 'client' ? (
           <form onSubmit={handleClientSubmit} className="auth-form space-y-3">
             <div>
@@ -177,11 +177,11 @@ export const AuthModal: React.FC = () => {
             </div>
           </form>
         ) : (
-          /* Formular Partener B2B SaaS */
+          /* Formular Partener Magazin/Restaurant */
           <form onSubmit={handlePartnerSubmit} className="auth-form space-y-3">
             <div>
               <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-[#30634E] text-white text-[9.5px] font-bold mb-0.5">
-                Platformă B2B SaaS
+                Portal Parteneri
               </div>
               <h2 className="auth-title text-base sm:text-lg font-bold text-[#232A27] leading-tight">
                 {isRegister ? 'Înregistrare Afacere / Magazin' : 'Autentificare SaveBite Partners'}
@@ -238,7 +238,7 @@ export const AuthModal: React.FC = () => {
                 fullWidth
                 className="auth-submit-btn !h-10 !text-xs sm:!text-sm font-bold"
               >
-                {isRegister ? 'Creează Cont Partener B2B' : 'Intră în Panoul Magazinului'}
+                {isRegister ? 'Creează Cont Partener' : 'Intră în Panoul Magazinului'}
               </Button>
             </div>
           </form>

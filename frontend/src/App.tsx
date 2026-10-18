@@ -172,14 +172,14 @@ function AppContent() {
     );
   };
 
-  // B2B SaaS: Actualizare stoc de către magazin
+  // Partener: Actualizare stoc de către magazin
   const handleUpdateStock = (productId: string, newStock: number) => {
     setOffers((prev) =>
       prev.map((o) => (o.id === productId ? { ...o, itemsLeft: newStock } : o))
     );
   };
 
-  // B2B SaaS: Ștergere produs din catalog
+  // Partener: Ștergere produs din catalog
   const handleDeleteProduct = (productId: string) => {
     setOffers((prev) => prev.filter((o) => o.id !== productId));
     setActiveToast({
@@ -190,7 +190,7 @@ function AppContent() {
     });
   };
 
-  // B2B SaaS: Salvare produs nou creat de magazin (manual sau AI)
+  // Partener: Salvare produs nou creat de magazin (manual sau AI)
   const handleSaveNewProduct = (newProduct: OfferProduct) => {
     setOffers((prev) => [newProduct, ...prev]);
     setActiveToast({
@@ -202,7 +202,7 @@ function AppContent() {
   };
 
   // ==========================================
-  // DACĂ UTILIZATORUL ESTE PARTENER B2B SAAS:
+  // DACĂ UTILIZATORUL ESTE PARTENER (MAGAZIN/RESTAURANT):
   // ==========================================
   if (role === 'PARTNER') {
     return (
@@ -330,7 +330,7 @@ function AppContent() {
         }}
       />
 
-      {/* Modal Autentificare (Client vs Partener B2B) */}
+      {/* Modal Autentificare (Client vs Partener) */}
       <AuthModal />
 
       {/* Footer Consumator */}
@@ -348,7 +348,7 @@ function AppContent() {
               onClick={() => openAuthModal('partner')}
               className="font-semibold text-[#30634E] hover:underline cursor-pointer"
             >
-              Ai o brutărie sau un restaurant? Intră în SaveBite Partners B2B
+              Ai o brutărie sau un restaurant? Intră în SaveBite Partners!
             </button>
             <span className="hidden sm:inline">·</span>
             <span className="whitespace-nowrap">© 2026 SaveBite România • EvoHR</span>
