@@ -17,7 +17,7 @@ import { Role } from '@prisma/client';
 @Controller('reservations')
 @UseGuards(JwtAuthGuard)
 export class ReservationsController {
-  constructor(private readonly reservationsService: ReservationsService) {}
+  constructor(private readonly reservationsService: ReservationsService) { }
 
   @Post()
   async create(
@@ -30,6 +30,13 @@ export class ReservationsController {
   @Get('my')
   async findMy(@CurrentUser() user: AuthenticatedUser) {
     return this.reservationsService.findMyReservations(user.userId);
+  }
+
+  @Get('store')
+  @UseGuards(RolesGuard)
+  @Roles(Role.PARTNER, Role.ADMIN)
+  async findStoreReservations(@CurrentUser() user: AuthenticatedUser) {
+    return this.reservationsService.findStoreReservations(user.userId);
   }
 
   @Post(':code/collect')

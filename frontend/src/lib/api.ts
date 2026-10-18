@@ -1,4 +1,4 @@
-﻿import type { AINotification, OfferProduct, Reservation, Store } from '../types';
+import type { AINotification, OfferProduct, Reservation, Store } from '../types';
 import type { Offer } from '../types/offer';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -210,6 +210,26 @@ export async function fetchMyReservations(): Promise<Reservation[]> {
     headers: getAuthHeaders(),
   });
   return readData<Reservation[]>(res);
+}
+
+export interface StoreReservation {
+  id: string;
+  pickupCode: string;
+  offerTitle: string;
+  price: number;
+  pickupWindow: string;
+  status: 'RESERVED' | 'COLLECTED' | 'CANCELLED';
+  clientName: string;
+  clientPhone: string;
+  clientEmail: string;
+  createdAt: string;
+}
+
+export async function fetchStoreReservations(): Promise<StoreReservation[]> {
+  const res = await fetch(apiUrl('/reservations/store'), {
+    headers: getAuthHeaders(),
+  });
+  return readData<StoreReservation[]>(res);
 }
 
 export async function collectReservation(pickupCode: string): Promise<{ success: boolean; message: string }> {

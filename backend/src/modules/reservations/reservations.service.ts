@@ -111,8 +111,43 @@ export class ReservationsService {
     }));
   }
 
-  // 3. Validare la Tejghea de către Partener (Marchează ca ridicat)
-  async collectReservation(partnerUserId: string, pickupCode: string) {
+  // 3. Rezervările primite de magazinul partenerului conectat
+  async findStoreReservations(partnerUserId: string) {
+    const store = await this.prisma.store.findUnique({
+      where: { ownerId: partnerUserId },
+    });
+
+    if (!store) {
+      throw new ForbiddenException('Doar partenerii pot vizualiza rezervările magazinului.');
+    }
+
+    const list = await this.prisma.reservation.findMany({
+      where: {
+        offer: { storeId: store.id },
+      },
+      include: {
+        offer: true,
+        user: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return list.map((r) => ({
+      id: r.id,
+      pickupCode: r.pickupCode,
+      offerTitle: r.offer.title,
+      price: r.price,
+      pickupWindow: r.pickupWindow,
+      status: r.status,
+      clientName: r.user.name,
+      clientPhone: r.user.phone || 'Nespecificat',
+      clientEmail: r.user.email,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  // 4. Validare la Tejghea de către Partener (Marchează ca ridicat)
+  async collectReservation(partnerUserId: string, rawPickupCode: string) {
     const store = await this.prisma.store.findUnique({
       where: { ownerId: partnerUserId },
     });
@@ -121,24 +156,54 @@ export class ReservationsService {
       throw new ForbiddenException('Doar partenerii înregistrați pot valida ridicarea comenzilor.');
     }
 
-    const reservation = await this.prisma.reservation.findUnique({
-      where: { pickupCode: pickupCode.trim().toUpperCase() },
+    if (!rawPickupCode) {
+      throw new BadRequestException('Te rugăm să introduci codul de ridicare.');
+    }
+
+    // Normalizare flexibilă: acceptă "7366", "#7366", "sb7366", "SB7366", "sb-7366", "SB-7366"
+    let cleanCode = rawPickupCode.trim().toUpperCase().replace(/^#/, '').trim();
+    if (!cleanCode.startsWith('SB-')) {
+      if (cleanCode.startsWith('SB')) {
+        cleanCode = 'SB-' + cleanCode.slice(2);
+      } else {
+        cleanCode = 'SB-' + cleanCode;
+      }
+    }
+
+    const reservation = await this.prisma.reservation.findFirst({
+      where: {
+        OR: [
+          { pickupCode: cleanCode },
+          { pickupCode: rawPickupCode.trim().toUpperCase() },
+          { pickupCode: { endsWith: rawPickupCode.trim() } },
+        ],
+      },
       include: {
-        offer: true,
+        offer: {
+          include: { store: true },
+        },
         user: true,
       },
     });
 
     if (!reservation) {
-      throw new NotFoundException(`Nicio rezervare activă găsită pentru codul ${pickupCode}.`);
+      throw new NotFoundException(`Nicio rezervare găsită în sistem pentru codul „${rawPickupCode}”. Verifică codul afișat pe ecranul clientului.`);
     }
 
     if (reservation.offer.storeId !== store.id) {
-      throw new ForbiddenException('Această comandă aparține altui magazin.');
+      throw new ForbiddenException(
+        `Codul „${reservation.pickupCode}” aparține magazinului „${reservation.offer.store.name}” (pachet: ${reservation.offer.title}). Tu ești conectat la „${store.name}”. Asigură-te că te autentifici în contul magazinului emitent!`
+      );
     }
 
     if (reservation.status === ReservationStatus.COLLECTED) {
-      throw new BadRequestException('Această comandă a fost deja ridicată anterior!');
+      return {
+        success: true,
+        alreadyCollected: true,
+        message: `Comanda (${reservation.pickupCode} · ${reservation.offer.title}) a fost deja predată clientului ${reservation.user.name}.`,
+        reservationId: reservation.id,
+        status: reservation.status,
+      };
     }
 
     if (reservation.status === ReservationStatus.CANCELLED) {
@@ -152,7 +217,7 @@ export class ReservationsService {
 
     return {
       success: true,
-      message: `Comanda pentru ${reservation.user.name} a fost validată cu succes!`,
+      message: `Comanda (${reservation.pickupCode} · ${reservation.offer.title}) pentru ${reservation.user.name} a fost validată cu succes!`,
       reservationId: updated.id,
       status: updated.status,
     };
