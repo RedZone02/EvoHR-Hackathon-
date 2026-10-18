@@ -1,4 +1,4 @@
-export type ProductCategory = 'all' | 'bakery' | 'restaurant' | 'grocery' | 'cafe' | 'pastry';
+﻿export type ProductCategory = 'all' | 'bakery' | 'restaurant' | 'grocery' | 'cafe' | 'pastry';
 
 export interface Store {
   id: string;
@@ -41,6 +41,7 @@ export interface Reservation {
   storeName: string;
   price: number;
   pickupWindow: string;
+  pickupCode?: string;
   status: 'reserved' | 'collected' | 'cancelled';
   createdAt: string;
 }

@@ -1,7 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { Plus, Trash2, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
 import type { OfferProduct } from '../../../types';
+import type { PartnerUser } from '../../../types/auth';
 import { Button } from '../../../components/ui/Button';
+import { useAuth } from '../../../context/AuthContext';
 
 export interface DashboardProductsProps {
   products: OfferProduct[];
@@ -18,6 +20,14 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
   onDeleteProduct,
   onOpenAIStockUpdate,
 }) => {
+  const { user } = useAuth();
+  const partner = user as PartnerUser | null;
+
+  const totalStock = products.reduce((acc, curr) => acc + curr.itemsLeft, 0);
+  const revenueDisplay = partner?.activeRevenueRon
+    ? `${partner.activeRevenueRon.toFixed(2)} RON`
+    : '246.00 RON';
+
   return (
     <div className="space-y-6 pb-12 text-left">
       {/* Header Panou Partener */}
@@ -30,7 +40,7 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
             Management Stocuri & Surplus
           </h1>
           <p className="text-xs sm:text-sm text-[#636965]">
-            Brutăria Cuptorul Fermecat · Copou, Iași
+            {partner?.businessName || 'Magazin Partener'} · {partner?.address || partner?.city || 'Iași, România'}
           </p>
         </div>
 
@@ -63,29 +73,29 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
       {/* Statistici Impact Partener */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         <div className="bg-white p-3 sm:p-5 rounded-[16px] border border-[#E4E7E5] shadow-xs">
-          <span className="text-[11px] sm:text-xs font-medium text-[#636965] block truncate">Pungi salvate azi</span>
-          <span className="text-lg sm:text-2xl font-bold text-[#30634E] mt-1 block">18 pachete</span>
+          <span className="text-[11px] sm:text-xs font-medium text-[#636965] block truncate">Stoc total activ</span>
+          <span className="text-lg sm:text-2xl font-bold text-[#30634E] mt-1 block">{totalStock} pachete</span>
           <span className="text-[10px] sm:text-[11px] text-[#30634E] flex items-center gap-1 mt-1 font-semibold truncate">
-            <TrendingUp className="w-3 h-3 shrink-0" /> +25% față de ieri
+            <TrendingUp className="w-3 h-3 shrink-0" /> în {products.length} oferte
           </span>
         </div>
 
         <div className="bg-white p-3 sm:p-5 rounded-[16px] border border-[#E4E7E5] shadow-xs">
           <span className="text-[11px] sm:text-xs font-medium text-[#636965] block truncate">Bani recuperați</span>
-          <span className="text-lg sm:text-2xl font-bold text-[#232A27] mt-1 block">246.00 RON</span>
+          <span className="text-lg sm:text-2xl font-bold text-[#232A27] mt-1 block">{revenueDisplay}</span>
           <span className="text-[10px] sm:text-[11px] text-[#636965] mt-1 block truncate">Surplus monetizat</span>
         </div>
 
         <div className="bg-white p-3 sm:p-5 rounded-[16px] border border-[#E4E7E5] shadow-xs">
           <span className="text-[11px] sm:text-xs font-medium text-[#636965] block truncate">Mâncare salvată</span>
           <span className="text-lg sm:text-2xl font-bold text-[#232A27] mt-1 block">14.2 kg</span>
-          <span className="text-[10px] sm:text-[11px] text-[#30634E] font-semibold mt-1 block truncate">Emisii CO2 evitate</span>
+          <span className="text-[10px] sm:text-[11px] text-[#30634E] font-semibold mt-1 block truncate">Emisii CO₂ evitate</span>
         </div>
 
         <div className="bg-white p-3 sm:p-5 rounded-[16px] border border-[#E4E7E5] shadow-xs">
           <span className="text-[11px] sm:text-xs font-medium text-[#636965] block truncate">Rating clienți</span>
-          <span className="text-lg sm:text-2xl font-bold text-[#232A27] mt-1 block">4.9 / 5.0</span>
-          <span className="text-[10px] sm:text-[11px] text-[#636965] mt-1 block truncate">din 112 recenzii</span>
+          <span className="text-lg sm:text-2xl font-bold text-[#232A27] mt-1 block">{partner?.store?.rating ? partner.store.rating.toFixed(1) : '4.9'} / 5.0</span>
+          <span className="text-[10px] sm:text-[11px] text-[#636965] mt-1 block truncate">Scor partener</span>
         </div>
       </div>
 
@@ -96,11 +106,11 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
             Oferte curente pe hartă ({products.length})
           </h2>
           <span className="text-xs text-[#636965]">
-            Modificările de stoc se sincronizează instantaneu
+            Modificările de stoc se sincronizează instantaneu în baza de date
           </span>
         </div>
 
-        {/* 1. Vizualizare Carduri pe Mobil (< 768px) - Ergonomie maximă pe telefon */}
+        {/* 1. Vizualizare Carduri pe Mobil (< 768px) */}
         <div className="block md:hidden divide-y divide-[#F5F6F4]">
           {products.map((item) => (
             <div key={item.id} className="p-3.5 space-y-3">
@@ -182,7 +192,7 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
               <tr className="border-b border-[#F5F6F4] bg-[#F5F6F4]/50 text-xs font-semibold text-[#636965] uppercase tracking-wider">
                 <th className="py-3 px-4">Produs / Pachet</th>
                 <th className="py-3 px-4">Categorie</th>
-                <th className="py-3 px-4">Preț întreg / Redus</th>
+                <th className="py-3 px-4">Preț Întreg / Redus</th>
                 <th className="py-3 px-4">Interval ridicare</th>
                 <th className="py-3 px-4 text-center">Stoc disponibil</th>
                 <th className="py-3 px-4 text-right">Acțiuni</th>
@@ -265,7 +275,7 @@ export const DashboardProducts: React.FC<DashboardProductsProps> = ({
         {products.length === 0 && (
           <div className="p-8 text-center text-[#636965]">
             <AlertCircle className="w-8 h-8 mx-auto text-[#636965]/50 mb-2" />
-            Nu ai nicio ofertă activă. Folosește butonul de sus pentru a adăuga surplusul de azi!
+            Nu ai nicio ofertă activă pentru magazinul tău. Folosește butonul de sus pentru a adăuga surplusul de azi!
           </div>
         )}
       </div>

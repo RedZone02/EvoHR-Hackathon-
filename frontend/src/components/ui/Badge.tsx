@@ -12,7 +12,6 @@ export const DiscountBadge: React.FC<DiscountBadgeProps> = ({
   className = '',
   variant = 'subtle',
 }) => {
-  // Figma spec: 12/16px semibold 600, 10px orizontal / 6px vertical, 12px colțuri
   const isSubtle = variant === 'subtle';
   return (
     <span
@@ -40,13 +39,20 @@ export const ExpireBadge: React.FC<ExpireBadgeProps> = ({
   minutesLeft,
   className = '',
 }) => {
-  // Figma spec: "Fii util, nu alarmant. Arată timpul rămas în cuvinte, împreună cu un ceas."
-  // Verde #30634E pe fundal #DAF2EC
   const formatTime = (minutes: number) => {
-    if (minutes < 60) return `expiră în ${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `expiră în ${hours}h ${mins}m` : `expiră în ${hours} ore`;
+    if (minutes >= 1440) {
+      const days = Math.floor(minutes / 1440);
+      return days === 1 ? 'valabil încă 1 zi' : `valabil încă ${days} zile`;
+    }
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (mins === 0) {
+        return hours === 1 ? 'expiră în 1 oră' : `expiră în ${hours} ore`;
+      }
+      return `expiră în ${hours}h ${mins}m`;
+    }
+    return `expiră în ${minutes} min`;
   };
 
   return (

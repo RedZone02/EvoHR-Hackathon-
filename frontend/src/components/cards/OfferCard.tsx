@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Clock, Heart } from 'lucide-react';
+import { MapPin, Clock, Heart, Store } from 'lucide-react';
 import type { OfferProduct } from '../../types';
 import { Button } from '../ui/Button';
 import { DiscountBadge, ExpireBadge } from '../ui/Badge';
@@ -55,13 +55,19 @@ export const OfferCard: React.FC<OfferCardProps> = ({
 
       {/* Corp Card */}
       <div className="p-4 flex flex-col flex-1 justify-between gap-3">
-        {/* Metadate: Categorie & Distanță */}
-        <div className="flex items-center justify-between text-xs font-semibold">
-          <span className="text-[#636965] uppercase tracking-wider text-[11px]">
-            {offer.categoryLabel}
-          </span>
-          <span className="inline-flex items-center gap-1 text-[#30634E] font-medium">
-            <MapPin className="w-3.5 h-3.5" />
+        {/* Metadate: Nume Partener / Local & Distanță */}
+        <div className="flex items-center justify-between text-xs gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Store className="w-3.5 h-3.5 text-[#30634E] shrink-0" />
+            <span
+              className="text-[#30634E] font-bold text-xs truncate"
+              title={offer.storeName || offer.categoryLabel}
+            >
+              {offer.storeName || offer.categoryLabel}
+            </span>
+          </div>
+          <span className="inline-flex items-center gap-1 text-[#636965] font-medium text-xs shrink-0">
+            <MapPin className="w-3.5 h-3.5 text-[#30634E]" />
             {offer.distanceText}
           </span>
         </div>
